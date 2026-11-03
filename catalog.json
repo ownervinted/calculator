@@ -1,0 +1,348 @@
+{
+  "models": [
+    {
+      "id": 1,
+      "name": "Bladekit 058",
+      "category": "Małe lemiesze",
+      "quantity": 0
+    },
+    {
+      "id": 2,
+      "name": "Bladekit 158",
+      "category": "Małe lemiesze",
+      "quantity": 0
+    },
+    {
+      "id": 3,
+      "name": "Diggerblade 1400",
+      "category": "Duże lemiesze",
+      "quantity": 0
+    },
+    {
+      "id": 4,
+      "name": "Diggerblade 1500",
+      "category": "Duże lemiesze",
+      "quantity": 0
+    },
+    {
+      "id": 5,
+      "name": "Blade 1500",
+      "category": "Duże lemiesze",
+      "quantity": 0
+    }
+  ],
+  "parts": [
+    {
+      "id": 1,
+      "name": "tarcza 218-990",
+      "thickness": 8
+    },
+    {
+      "id": 2,
+      "name": "bok",
+      "thickness": 8
+    },
+    {
+      "id": 3,
+      "name": "zastrzal RG058",
+      "thickness": 5
+    },
+    {
+      "id": 4,
+      "name": "belka RG158058(2225)",
+      "thickness": 6
+    },
+    {
+      "id": 5,
+      "name": "klapka mala",
+      "thickness": 8
+    },
+    {
+      "id": 6,
+      "name": "zaslepka",
+      "thickness": 6
+    },
+    {
+      "id": 7,
+      "name": "noz RG158",
+      "thickness": 10
+    },
+    {
+      "id": 8,
+      "name": "noz 125(maly)",
+      "thickness": 10
+    },
+    {
+      "id": 9,
+      "name": "klapka duza",
+      "thickness": 8
+    },
+    {
+      "id": 10,
+      "name": "noz RG155",
+      "thickness": 10
+    },
+    {
+      "id": 11,
+      "name": "ksztaltownik RG268 (krotki)",
+      "thickness": 6
+    },
+    {
+      "id": 12,
+      "name": "przod tarczy RG268 (krotki)",
+      "thickness": 5
+    },
+    {
+      "id": 13,
+      "name": "noz RG268",
+      "thickness": 12
+    },
+    {
+      "id": 14,
+      "name": "bok (z fasolka)",
+      "thickness": 8
+    },
+    {
+      "id": 15,
+      "name": "zastrzal RG518",
+      "thickness": 5
+    },
+    {
+      "id": 16,
+      "name": "belka 5370, RG218",
+      "thickness": 6
+    },
+    {
+      "id": 17,
+      "name": "jajka",
+      "thickness": 10
+    },
+    {
+      "id": 18,
+      "name": "zastrzal",
+      "thickness": 4
+    },
+    {
+      "id": 19,
+      "name": "ksztaltownik RG418 (dlugi)",
+      "thickness": 6
+    },
+    {
+      "id": 20,
+      "name": "przod tarczy RG418 (dlugi)",
+      "thickness": 5
+    },
+    {
+      "id": 21,
+      "name": "noz 1500",
+      "thickness": 12
+    },
+    {
+      "id": 22,
+      "name": "belka RH418(4751)",
+      "thickness": 6
+    },
+    {
+      "id": 23,
+      "name": "oslonka",
+      "thickness": null
+    },
+    {
+      "id": 24,
+      "name": "jezyki",
+      "thickness": null
+    }
+  ],
+  "recipes": [
+    {
+      "modelId": 1,
+      "partId": 1,
+      "quantity": 1
+    },
+    {
+      "modelId": 1,
+      "partId": 2,
+      "quantity": 2
+    },
+    {
+      "modelId": 1,
+      "partId": 3,
+      "quantity": 2
+    },
+    {
+      "modelId": 1,
+      "partId": 4,
+      "quantity": 1
+    },
+    {
+      "modelId": 1,
+      "partId": 5,
+      "quantity": 2
+    },
+    {
+      "modelId": 1,
+      "partId": 6,
+      "quantity": 2
+    },
+    {
+      "modelId": 1,
+      "partId": 7,
+      "quantity": 1
+    },
+    {
+      "modelId": 1,
+      "partId": 8,
+      "quantity": 2
+    },
+    {
+      "modelId": 2,
+      "partId": 1,
+      "quantity": 1
+    },
+    {
+      "modelId": 2,
+      "partId": 3,
+      "quantity": 2
+    },
+    {
+      "modelId": 2,
+      "partId": 4,
+      "quantity": 1
+    },
+    {
+      "modelId": 2,
+      "partId": 9,
+      "quantity": 2
+    },
+    {
+      "modelId": 2,
+      "partId": 6,
+      "quantity": 2
+    },
+    {
+      "modelId": 2,
+      "partId": 7,
+      "quantity": 1
+    },
+    {
+      "modelId": 2,
+      "partId": 10,
+      "quantity": 2
+    },
+    {
+      "modelId": 3,
+      "partId": 11,
+      "quantity": 1
+    },
+    {
+      "modelId": 3,
+      "partId": 12,
+      "quantity": 1
+    },
+    {
+      "modelId": 3,
+      "partId": 13,
+      "quantity": 1
+    },
+    {
+      "modelId": 3,
+      "partId": 14,
+      "quantity": 2
+    },
+    {
+      "modelId": 3,
+      "partId": 15,
+      "quantity": 2
+    },
+    {
+      "modelId": 3,
+      "partId": 16,
+      "quantity": 1
+    },
+    {
+      "modelId": 3,
+      "partId": 6,
+      "quantity": 2
+    },
+    {
+      "modelId": 4,
+      "partId": 17,
+      "quantity": 2
+    },
+    {
+      "modelId": 4,
+      "partId": 18,
+      "quantity": 2
+    },
+    {
+      "modelId": 4,
+      "partId": 19,
+      "quantity": 1
+    },
+    {
+      "modelId": 4,
+      "partId": 20,
+      "quantity": 1
+    },
+    {
+      "modelId": 4,
+      "partId": 21,
+      "quantity": 1
+    },
+    {
+      "modelId": 4,
+      "partId": 14,
+      "quantity": 1
+    },
+    {
+      "modelId": 4,
+      "partId": 6,
+      "quantity": 2
+    },
+    {
+      "modelId": 5,
+      "partId": 19,
+      "quantity": 1
+    },
+    {
+      "modelId": 5,
+      "partId": 20,
+      "quantity": 1
+    },
+    {
+      "modelId": 5,
+      "partId": 21,
+      "quantity": 1
+    },
+    {
+      "modelId": 5,
+      "partId": 14,
+      "quantity": 2
+    },
+    {
+      "modelId": 5,
+      "partId": 15,
+      "quantity": 2
+    },
+    {
+      "modelId": 5,
+      "partId": 22,
+      "quantity": 1
+    },
+    {
+      "modelId": 5,
+      "partId": 6,
+      "quantity": 2
+    },
+    {
+      "modelId": 5,
+      "partId": 23,
+      "quantity": 2
+    },
+    {
+      "modelId": 5,
+      "partId": 24,
+      "quantity": 4
+    }
+  ]
+}

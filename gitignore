@@ -1,0 +1,9 @@
+@"
+
+bin/
+obj/
+.idea/
+.vs/
+*.exe
+*.pdb
+"@ | Add-Content .gitignore
