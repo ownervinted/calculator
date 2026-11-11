@@ -1,6 +1,7 @@
 @"
 
 bin/
+publish/
 obj/
 .idea/
 .vs/

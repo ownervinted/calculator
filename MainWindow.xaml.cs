@@ -36,6 +36,9 @@ public class Part : ObservableItem
     public int Id { get; set; }
     private string name = "";
     private int? thickness;
+    private int? piecesPerSheet;
+    public int PrintOrder { get; set; } = 999;
+    public int? PiecesPerSheet { get => piecesPerSheet; set { if (piecesPerSheet == value) return; piecesPerSheet = value; Changed(); } }
     public string Name { get => name; set { if (name == value) return; name = value; Changed(); Changed(nameof(Display)); } }
     public int? Thickness { get => thickness; set { if (thickness == value) return; thickness = value; Changed(); Changed(nameof(Display)); } }
     public string Display => $"{Name} ({(Thickness.HasValue ? Thickness + " mm" : "—")})";
@@ -55,11 +58,12 @@ public class Recipe : ObservableItem
 }
 public class Catalog
 {
+    public int SchemaVersion { get; set; }
     public List<Model> Models { get; set; } = [];
     public List<Part> Parts { get; set; } = [];
     public List<Recipe> Recipes { get; set; } = [];
 }
-public class Result { public string Name { get; set; } = ""; public string ThicknessLabel { get; set; } = "—"; public int Quantity { get; set; } public string DisplayName => $"{Name}  ·  {ThicknessLabel}"; }
+public class Result { public int PrintOrder { get; set; } = 999; public string Name { get; set; } = ""; public string ThicknessLabel { get; set; } = "—"; public long Quantity { get; set; } public int? PiecesPerSheet { get; set; } public long? Sheets => PiecesPerSheet is > 0 ? Quantity / PiecesPerSheet.Value + (Quantity % PiecesPerSheet.Value == 0 ? 0 : 1) : null; public string QuantityLabel => Sheets.HasValue ? $"{Quantity} szt. · {Sheets} ark." : $"{Quantity} szt."; public string DisplayName => $"{Name}  ·  {ThicknessLabel}"; }
 public class ResultGroup { public string ThicknessLabel { get; set; } = ""; public ObservableCollection<Result> Items { get; } = []; }
 
 public class SmoothScrollViewer : ScrollViewer
@@ -71,6 +75,7 @@ public class SmoothScrollViewer : ScrollViewer
     public SmoothScrollViewer()
     {
         PanningMode = PanningMode.VerticalOnly;
+        CanContentScroll = false;
         Loaded += (_, _) => { position = VerticalOffset; target = VerticalOffset; };
         Unloaded += (_, _) => StopAnimation();
         ScrollChanged += (_, e) =>
@@ -98,7 +103,12 @@ public class SmoothScrollViewer : ScrollViewer
         var factor = 1 - Math.Exp(-elapsed * 13);
         position += (target - position) * factor;
         if (Math.Abs(target - position) < 0.35) { position = target; ScrollToVerticalOffset(position); StopAnimation(); }
-        else ScrollToVerticalOffset(position);
+        else ScrollToVerticalOffset(PixelOffset(position));
+    }
+    private double PixelOffset(double offset)
+    {
+        double scale = VisualTreeHelper.GetDpi(this).DpiScaleY;
+        return Math.Clamp(Math.Round(offset * scale) / scale, 0, ScrollableHeight);
     }
     protected override void OnPreviewMouseWheel(MouseWheelEventArgs e)
     {
@@ -113,7 +123,7 @@ public class SmoothScrollViewer : ScrollViewer
 public partial class MainWindow : Window, INotifyPropertyChanged
 {
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true, WriteIndented = true };
-    private static readonly string Storage = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "LemieszeCalculator", "catalog.json");
+    private string Storage = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "LemieszeCalculator", "catalog.json");
     private Catalog catalog = new();
     private bool initializing = true;
     private bool saving;
@@ -139,8 +149,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     public MainWindow()
     {
         InitializeComponent();
+        ThemeManager.Initialize();
+        SetNavigation(true);
         DataContext = this;
-        try { catalog = Load(); } catch { catalog = LoadDefault(); }
+        RestoreProfile();
+        Notify(nameof(ProfileLabel));
+        catalog = Load();
         foreach (var m in catalog.Models) { Models.Add(m); Watch(m); }
         foreach (var p in catalog.Parts) { Parts.Add(p); Watch(p); }
         foreach (var r in catalog.Recipes) Watch(r);
@@ -151,6 +165,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         initializing = false;
         AddHandler(UIElement.PreviewMouseDownEvent, new MouseButtonEventHandler(TrackPickerClick), true);
         Closing += (_, _) => Save();
+        Loaded += async (_, _) =>
+        {
+            UpdateService.ConfirmStartup();
+            await UpdateService.CheckAsync(this);
+        };
     }
     private void Watch(ObservableItem item) => item.PropertyChanged += ItemChanged;
     private void ItemChanged(object? sender, PropertyChangedEventArgs e)
@@ -172,7 +191,139 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("LemieszeDesktop.catalog.json") ?? throw new InvalidOperationException("Brak katalogu startowego");
         return JsonSerializer.Deserialize<Catalog>(stream, JsonOptions) ?? new Catalog();
     }
-    private static Catalog Load() => File.Exists(Storage) ? JsonSerializer.Deserialize<Catalog>(File.ReadAllText(Storage), JsonOptions) ?? LoadDefault() : LoadDefault();
+    private Catalog Load()
+    {
+        var value = File.Exists(Storage)
+            ? JsonSerializer.Deserialize<Catalog>(File.ReadAllText(Storage), JsonOptions)
+                ?? throw new InvalidDataException("Nieprawidłowy katalog")
+            : LoadDefault();
+        if (value.SchemaVersion < 1)
+        {
+            if (File.Exists(Storage))
+                File.Copy(Storage, Storage + ".before-cap-split-" + Guid.NewGuid().ToString("N") + ".bak");
+            foreach (var part in value.Parts.Where(p => p.Name.Trim().Equals("zaslepka", StringComparison.OrdinalIgnoreCase)
+                || p.Name.Trim().Equals("zaślepka", StringComparison.OrdinalIgnoreCase)).ToList())
+            {
+                var large = new Part {
+                    Id = checked(value.Parts.Select(p => p.Id).Concat(value.Recipes.Select(r => r.PartId)).DefaultIfEmpty(0).Max() + 1),
+                    Name = "Zaślepka duża", Thickness = part.Thickness
+                };
+                value.Parts.Add(large);
+                part.Name = "Zaślepka mała";
+                foreach (var recipe in value.Recipes.Where(r => r.PartId == part.Id))
+                    if (value.Models.Any(m => m.Id == recipe.ModelId && m.Category == "Duże lemiesze"))
+                        recipe.PartId = large.Id;
+            }
+            value.SchemaVersion = 1;
+        }
+        if (value.SchemaVersion < 2)
+        {
+            if (File.Exists(Storage))
+                File.Copy(Storage, Storage + ".before-sheets-" + Guid.NewGuid().ToString("N") + ".bak");
+            var rates = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["ksztaltownik RG268 (krotki)"] = 9,
+                ["ksztaltownik RG418 (dlugi)"] = 9,
+                ["przod tarczy RG268 (krotki)"] = 10,
+                ["przod tarczy RG418 (dlugi)"] = 10,
+                ["tarcza 218-990"] = 19,
+                ["zastrzal RG058"] = 77,
+                ["belka RG158058(2225)"] = 34,
+                ["zastrzal RG518"] = 72,
+                ["belka 5370, RG218"] = 24,
+                ["zastrzal"] = 36,
+                ["belka RH418(4751)"] = 36,
+            };
+            foreach (var part in value.Parts)
+            {
+                if (rates.TryGetValue(part.Name.Trim(), out int rate) && part.PiecesPerSheet == null)
+                    part.PiecesPerSheet = rate;
+            }
+            value.SchemaVersion = 2;
+        }
+        if (value.SchemaVersion < 3)
+        {
+            if (File.Exists(Storage))
+                File.Copy(Storage, Storage + ".before-rg418-5mm-" + Guid.NewGuid().ToString("N") + ".bak");
+            foreach (var part in value.Parts.Where(p => p.Name.Trim().Equals("przod tarczy RG418 (dlugi)", StringComparison.OrdinalIgnoreCase)))
+                part.Thickness = 5;
+            value.SchemaVersion = 3;
+        }
+        if (value.SchemaVersion < 4)
+        {
+            if (File.Exists(Storage))
+                File.Copy(Storage, Storage + ".before-polish-names-" + Guid.NewGuid().ToString("N") + ".bak");
+            var names = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["tarcza 218-990"] = "Tarcza 218-990",
+                ["bok"] = "Bok",
+                ["zastrzal RG058"] = "Zastrzał RG058",
+                ["belka RG158058(2225)"] = "Belka RG158058 (2225)",
+                ["klapka mala"] = "Klapka mała",
+                ["Zaślepka mała"] = "Zaślepka mała",
+                ["noz RG158"] = "Nóż RG158",
+                ["noz 125(maly)"] = "Nóż 125 (mały)",
+                ["klapka duza"] = "Klapka duża",
+                ["noz RG155"] = "Nóż RG155",
+                ["ksztaltownik RG268 (krotki)"] = "Kształtownik RG268 (krótki)",
+                ["przod tarczy RG268 (krotki)"] = "Przód tarczy RG268 (krótki)",
+                ["noz RG268"] = "Nóż RG268",
+                ["bok (z fasolka)"] = "Bok (z fasolką)",
+                ["zastrzal RG518"] = "Zastrzał RG518",
+                ["belka 5370, RG218"] = "Belka 5370, RG218",
+                ["jajka"] = "Jajka",
+                ["zastrzal"] = "Zastrzał",
+                ["ksztaltownik RG418 (dlugi)"] = "Kształtownik RG418 (długi)",
+                ["przod tarczy RG418 (dlugi)"] = "Przód tarczy RG418 (długi)",
+                ["noz 1500"] = "Nóż 1500",
+                ["belka RH418(4751)"] = "Belka RH418 (4751)",
+                ["oslonka"] = "Osłonka",
+                ["jezyki"] = "Języki",
+                ["Zaślepka duża"] = "Zaślepka duża",
+            };
+            foreach (var part in value.Parts)
+                if (names.TryGetValue(part.Name.Trim(), out var corrected))
+                    part.Name = corrected;
+            value.SchemaVersion = 4;
+        }
+        if (value.SchemaVersion < 5)
+        {
+            if (File.Exists(Storage))
+                File.Copy(Storage, Storage + ".before-print-order-" + Guid.NewGuid().ToString("N") + ".bak");
+            var order = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Kształtownik RG268 (krótki)"] = 1,
+                ["Kształtownik RG418 (długi)"] = 2,
+                ["Przód tarczy RG268 (krótki)"] = 3,
+                ["Przód tarczy RG418 (długi)"] = 4,
+                ["Nóż 1500"] = 5,
+                ["Nóż RG268"] = 6,
+                ["Tarcza 218-990"] = 7,
+                ["Klapka mała"] = 8,
+                ["Klapka duża"] = 9,
+                ["Bok (z fasolką)"] = 10,
+                ["Bok"] = 11,
+                ["Nóż RG158"] = 12,
+                ["Nóż 125 (mały)"] = 13,
+                ["Nóż RG155"] = 14,
+                ["Zastrzał RG058"] = 15,
+                ["Zastrzał RG518"] = 16,
+                ["Zastrzał"] = 17,
+                ["Belka RH418 (4751)"] = 18,
+                ["Belka 5370, RG218"] = 19,
+                ["Belka RG158058 (2225)"] = 20,
+                ["Osłonka"] = 21,
+                ["Zaślepka mała"] = 22,
+                ["Zaślepka duża"] = 23,
+                ["Języki"] = 24,
+            };
+            foreach (var part in value.Parts)
+                if (part.PrintOrder == 999 && order.TryGetValue(part.Name.Trim(), out int position))
+                    part.PrintOrder = position;
+            value.SchemaVersion = 5;
+        }
+        return value;
+    }
     private void Save()
     {
         if (saving || initializing) return;
@@ -212,22 +363,22 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         Results.Clear();
         ResultGroups.Clear();
-        var totals = new Dictionary<int, int>();
+        var totals = new Dictionary<int, long>();
         foreach (var recipe in catalog.Recipes)
         {
             var count = Models.FirstOrDefault(m => m.Id == recipe.ModelId)?.Quantity ?? 0;
             if (count <= 0 || recipe.Quantity <= 0) continue;
-            totals[recipe.PartId] = totals.GetValueOrDefault(recipe.PartId) + count * recipe.Quantity;
+            totals[recipe.PartId] = totals.GetValueOrDefault(recipe.PartId) + (long)count * recipe.Quantity;
         }
         foreach (var entry in totals.Select(x => (part: Parts.FirstOrDefault(p => p.Id == x.Key), quantity: x.Value)).Where(x => x.part != null).OrderBy(x => x.part!.Thickness ?? int.MaxValue).ThenBy(x => x.part!.Name))
-            Results.Add(new Result { Name = entry.part!.Name, ThicknessLabel = entry.part.Thickness?.ToString() ?? "—", Quantity = entry.quantity });
+            Results.Add(new Result { Name = entry.part!.Name, ThicknessLabel = entry.part.Thickness?.ToString() ?? "—", Quantity = entry.quantity, PrintOrder = entry.part.PrintOrder, PiecesPerSheet = entry.part.PiecesPerSheet });
         foreach (var group in Results.GroupBy(r => r.ThicknessLabel))
         {
             var resultGroup = new ResultGroup { ThicknessLabel = group.Key == "—" ? "Bez grubości" : group.Key };
             foreach (var result in group) resultGroup.Items.Add(result);
             ResultGroups.Add(resultGroup);
         }
-        TotalLabel.Text = $"Łącznie: {Results.Sum(r => r.Quantity)} szt.";
+        TotalLabel.Text = $"Łącznie: {Results.Sum(r => r.Quantity)} szt. · {Results.Sum(r => r.Sheets ?? 0)} ark.";
     }
     private void UpdateAll()
     {
@@ -246,28 +397,43 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void Close_Click(object sender, RoutedEventArgs e) => Close();
     private void CalculatorNav_Click(object sender, RoutedEventArgs e)
     {
-        CalculatorPage.Visibility = Visibility.Visible;
-        EditorPage.Visibility = Visibility.Collapsed;
-        CalculatorNav.Background = new SolidColorBrush(Color.FromRgb(59, 93, 230));
-        EditorNav.Background = new SolidColorBrush(Color.FromRgb(34, 43, 65));
         UpdateAll();
+        SwitchPage(true);
     }
-    private void EditorNav_Click(object sender, RoutedEventArgs e)
+    private void EditorNav_Click(object sender, RoutedEventArgs e) => SwitchPage(false);
+    private void Quantity_Focus(object sender, KeyboardFocusChangedEventArgs e)
     {
-        CalculatorPage.Visibility = Visibility.Collapsed;
-        EditorPage.Visibility = Visibility.Visible;
-        CalculatorNav.Background = new SolidColorBrush(Color.FromRgb(34, 43, 65));
-        EditorNav.Background = new SolidColorBrush(Color.FromRgb(59, 93, 230));
+        if (sender is TextBox box) box.SelectAll();
+    }
+    private void Quantity_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (sender is not TextBox box) return;
+        if (e.Key == Key.Escape) { box.GetBindingExpression(TextBox.TextProperty)?.UpdateTarget(); e.Handled = true; }
+        if (e.Key == Key.Enter) { CommitQuantity(box); e.Handled = true; }
+    }
+    private void Quantity_LostFocus(object sender, RoutedEventArgs e)
+    {
+        if (sender is TextBox box) CommitQuantity(box);
+    }
+    private void CommitQuantity(TextBox box)
+    {
+        int minimum = box.DataContext is Recipe ? 1 : 0;
+        if (int.TryParse(box.Text, out int number) && number >= minimum)
+        {
+            if (box.DataContext is Model model) model.Quantity = number;
+            if (box.DataContext is Recipe recipe) recipe.Quantity = number;
+        }
+        box.GetBindingExpression(TextBox.TextProperty)?.UpdateTarget();
     }
     private void ChangeModel(object sender, int delta)
     {
-        if (sender is Button { Tag: Model model }) { model.Quantity = Math.Max(0, model.Quantity + delta); UpdateAll(); }
+        if (sender is Button { Tag: Model model }) { model.Quantity = Math.Max(0, (int)Math.Clamp((long)model.Quantity + delta, 0, int.MaxValue)); UpdateAll(); }
     }
     private void IncreaseModel_Click(object sender, RoutedEventArgs e) => ChangeModel(sender, 1);
     private void DecreaseModel_Click(object sender, RoutedEventArgs e) => ChangeModel(sender, -1);
     private void Calculate_Click(object sender, RoutedEventArgs e) => UpdateAll();
     private void Clear_Click(object sender, RoutedEventArgs e) { foreach (var m in Models) m.Quantity = 0; UpdateAll(); }
-    private string ResultText() => string.Join(Environment.NewLine, Results.GroupBy(x => x.ThicknessLabel).Select(g => $"{g.Key} mm" + Environment.NewLine + string.Join(Environment.NewLine, g.Select(x => $"{x.Name} — {x.Quantity} szt."))));
+    private string ResultText() => string.Join(Environment.NewLine, Results.GroupBy(x => x.ThicknessLabel).Select(g => $"{g.Key} mm" + Environment.NewLine + string.Join(Environment.NewLine, g.Select(x => $"{x.Name} — {x.QuantityLabel}"))));
     private void Copy_Click(object sender, RoutedEventArgs e) { if (Results.Count > 0) Clipboard.SetText(ResultText()); }
     private void Export_Click(object sender, RoutedEventArgs e)
     {
@@ -286,6 +452,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void DeleteModel_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not Button { Tag: Model model }) return;
+        if (MessageBox.Show(this, $"Usunąć model {model.Name} i jego recepturę?", "Usuń model", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
         catalog.Recipes.RemoveAll(r => r.ModelId == model.Id);
         Models.Remove(model);
         if (selectedModel == model) selectedModel = Models.FirstOrDefault();
@@ -305,6 +472,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void DeletePart_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not Button { Tag: Part part }) return;
+        if (MessageBox.Show(this, $"Usunąć część {part.Name} ze wszystkich receptur?", "Usuń część", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
         catalog.Recipes.RemoveAll(r => r.PartId == part.Id);
         Parts.Remove(part); RefreshRecipes(); UpdateAll();
     }
@@ -323,7 +491,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     }
     private void ChangeRecipe(object sender, int delta)
     {
-        if (sender is Button { Tag: Recipe recipe }) { recipe.Quantity = Math.Max(1, recipe.Quantity + delta); UpdateAll(); }
+        if (sender is Button { Tag: Recipe recipe }) { recipe.Quantity = Math.Max(1, (int)Math.Clamp((long)recipe.Quantity + delta, 1, int.MaxValue)); UpdateAll(); }
     }
     private void IncreaseRecipe_Click(object sender, RoutedEventArgs e) => ChangeRecipe(sender, 1);
     private void DecreaseRecipe_Click(object sender, RoutedEventArgs e) => ChangeRecipe(sender, -1);

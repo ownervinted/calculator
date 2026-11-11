@@ -34,123 +34,164 @@
   "parts": [
     {
       "id": 1,
-      "name": "tarcza 218-990",
-      "thickness": 8
+      "name": "Tarcza 218-990",
+      "thickness": 8,
+      "piecesPerSheet": 19,
+      "printOrder": 7
     },
     {
       "id": 2,
-      "name": "bok",
-      "thickness": 8
+      "name": "Bok",
+      "thickness": 8,
+      "printOrder": 11
     },
     {
       "id": 3,
-      "name": "zastrzal RG058",
-      "thickness": 5
+      "name": "Zastrzał RG058",
+      "thickness": 5,
+      "piecesPerSheet": 77,
+      "printOrder": 15
     },
     {
       "id": 4,
-      "name": "belka RG158058(2225)",
-      "thickness": 6
+      "name": "Belka RG158058 (2225)",
+      "thickness": 6,
+      "piecesPerSheet": 34,
+      "printOrder": 20
     },
     {
       "id": 5,
-      "name": "klapka mala",
-      "thickness": 8
+      "name": "Klapka mała",
+      "thickness": 8,
+      "printOrder": 8
     },
     {
       "id": 6,
-      "name": "zaslepka",
-      "thickness": 6
+      "name": "Zaślepka mała",
+      "thickness": 6,
+      "printOrder": 22
     },
     {
       "id": 7,
-      "name": "noz RG158",
-      "thickness": 10
+      "name": "Nóż RG158",
+      "thickness": 10,
+      "printOrder": 12
     },
     {
       "id": 8,
-      "name": "noz 125(maly)",
-      "thickness": 10
+      "name": "Nóż 125 (mały)",
+      "thickness": 10,
+      "printOrder": 13
     },
     {
       "id": 9,
-      "name": "klapka duza",
-      "thickness": 8
+      "name": "Klapka duża",
+      "thickness": 8,
+      "printOrder": 9
     },
     {
       "id": 10,
-      "name": "noz RG155",
-      "thickness": 10
+      "name": "Nóż RG155",
+      "thickness": 10,
+      "printOrder": 14
     },
     {
       "id": 11,
-      "name": "ksztaltownik RG268 (krotki)",
-      "thickness": 6
+      "name": "Kształtownik RG268 (krótki)",
+      "thickness": 6,
+      "piecesPerSheet": 9,
+      "printOrder": 1
     },
     {
       "id": 12,
-      "name": "przod tarczy RG268 (krotki)",
-      "thickness": 5
+      "name": "Przód tarczy RG268 (krótki)",
+      "thickness": 5,
+      "piecesPerSheet": 10,
+      "printOrder": 3
     },
     {
       "id": 13,
-      "name": "noz RG268",
-      "thickness": 12
+      "name": "Nóż RG268",
+      "thickness": 12,
+      "printOrder": 6
     },
     {
       "id": 14,
-      "name": "bok (z fasolka)",
-      "thickness": 8
+      "name": "Bok (z fasolką)",
+      "thickness": 8,
+      "printOrder": 10
     },
     {
       "id": 15,
-      "name": "zastrzal RG518",
-      "thickness": 5
+      "name": "Zastrzał RG518",
+      "thickness": 5,
+      "piecesPerSheet": 72,
+      "printOrder": 16
     },
     {
       "id": 16,
-      "name": "belka 5370, RG218",
-      "thickness": 6
+      "name": "Belka 5370, RG218",
+      "thickness": 6,
+      "piecesPerSheet": 24,
+      "printOrder": 19
     },
     {
       "id": 17,
-      "name": "jajka",
-      "thickness": 10
+      "name": "Jajka",
+      "thickness": 10,
+      "printOrder": 0
     },
     {
       "id": 18,
-      "name": "zastrzal",
-      "thickness": 4
+      "name": "Zastrzał",
+      "thickness": 4,
+      "piecesPerSheet": 36,
+      "printOrder": 17
     },
     {
       "id": 19,
-      "name": "ksztaltownik RG418 (dlugi)",
-      "thickness": 6
+      "name": "Kształtownik RG418 (długi)",
+      "thickness": 6,
+      "piecesPerSheet": 9,
+      "printOrder": 2
     },
     {
       "id": 20,
-      "name": "przod tarczy RG418 (dlugi)",
-      "thickness": 5
+      "name": "Przód tarczy RG418 (długi)",
+      "thickness": 5,
+      "piecesPerSheet": 10,
+      "printOrder": 4
     },
     {
       "id": 21,
-      "name": "noz 1500",
-      "thickness": 12
+      "name": "Nóż 1500",
+      "thickness": 12,
+      "printOrder": 5
     },
     {
       "id": 22,
-      "name": "belka RH418(4751)",
-      "thickness": 6
+      "name": "Belka RH418 (4751)",
+      "thickness": 6,
+      "piecesPerSheet": 36,
+      "printOrder": 18
     },
     {
       "id": 23,
-      "name": "oslonka",
-      "thickness": null
+      "name": "Osłonka",
+      "thickness": null,
+      "printOrder": 21
     },
     {
       "id": 24,
-      "name": "jezyki",
-      "thickness": null
+      "name": "Języki",
+      "thickness": null,
+      "printOrder": 24
+    },
+    {
+      "id": 25,
+      "name": "Zaślepka duża",
+      "thickness": 6,
+      "printOrder": 23
     }
   ],
   "recipes": [
@@ -261,7 +302,7 @@
     },
     {
       "modelId": 3,
-      "partId": 6,
+      "partId": 25,
       "quantity": 2
     },
     {
@@ -296,7 +337,7 @@
     },
     {
       "modelId": 4,
-      "partId": 6,
+      "partId": 25,
       "quantity": 2
     },
     {
@@ -331,7 +372,7 @@
     },
     {
       "modelId": 5,
-      "partId": 6,
+      "partId": 25,
       "quantity": 2
     },
     {
@@ -344,5 +385,6 @@
       "partId": 24,
       "quantity": 4
     }
-  ]
+  ],
+  "schemaVersion": 5
 }
